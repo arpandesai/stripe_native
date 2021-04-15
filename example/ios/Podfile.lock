@@ -1,0 +1,29 @@
+PODS:
+  - Flutter (1.0.0)
+  - Stripe (17.0.4)
+  - stripe_native (0.0.1):
+    - Flutter
+    - Stripe
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - stripe_native (from `.symlinks/plugins/stripe_native/ios`)
+
+SPEC REPOS:
+  trunk:
+    - Stripe
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  stripe_native:
+    :path: ".symlinks/plugins/stripe_native/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 434fef37c0980e73bb6479ef766c45957d4b510c
+  Stripe: 54de24c0039e9fe6ad6217325db81350552df6a9
+  stripe_native: 28eb7914504e6929f17993cff7ca0d05f2734da6
+
+PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+
+COCOAPODS: 1.10.1
