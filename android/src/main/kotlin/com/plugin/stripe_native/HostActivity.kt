@@ -123,6 +123,7 @@ class HostActivity : ComponentActivity() {
 
             })
         }else{
+              StripeNativePlugin.resultInterface.error("payment_cancelled_by_user","User pressed back",nil);
             this@HostActivity.finish()
         }
     }
