@@ -97,16 +97,16 @@ class HostActivity : ComponentActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        showPaymentDialog();
-        
 
-        if (data != null) {
+        /// check if user click on cancel or back button then we should not start the payment processing
+          if (data != null&&resultCode==-1) {
+              showPaymentDialog();
             paymentSession.handlePaymentData(requestCode, resultCode, data)
             stripe.onPaymentResult(requestCode, data, object : ApiResultCallback<PaymentIntentResult> {
                 override fun onError(e: Exception) {
                     hidePaymentDialog();
-                    Toast.makeText(this@HostActivity, "onError +${e.localizedMessage}", Toast.LENGTH_LONG).show();
-                    Toast.makeText(this@HostActivity, "onError +${e.message}", Toast.LENGTH_LONG).show();
+//                    Toast.makeText(this@HostActivity, "onError +${e.localizedMessage}", Toast.LENGTH_LONG).show();
+//                    Toast.makeText(this@HostActivity, "onError +${e.message}", Toast.LENGTH_LONG).show();
 
                     Log.d("onError --> ", e.localizedMessage)
 
@@ -122,6 +122,8 @@ class HostActivity : ComponentActivity() {
                 }
 
             })
+        }else{
+            this@HostActivity.finish()
         }
     }
 
@@ -140,6 +142,12 @@ class HostActivity : ComponentActivity() {
 
     override fun onBackPressed() {
         finish();
+    }
+
+    override fun onDestroy() {
+        hidePaymentDialog()
+        super.onDestroy()
+    
     }
 
 

@@ -72,7 +72,6 @@ class StripeNativePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         if (clientSecret.isEmpty()) {
             result.error("client_key_not_found", "Please provide client secret key", null)
         }
-
         //Getting all the info form flutter
         try {
             PaymentConfiguration.init(context, publishableKey)
@@ -90,23 +89,11 @@ class StripeNativePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             result.error(e.cause.toString(), e.localizedMessage.toString(), e.stackTrace);
 
         }
-
-//        stripe = Stripe(context, publishableKey)
-//        paymentSession = PaymentSession(
-//                context,
-//                createPaymentSessionConfig()
-//        )
-//        paymentSession.init(createPaymentSessionListener())
-//        paymentSession.presentPaymentMethodSelection()
-
-
         val intent = Intent(context, HostActivity::class.java)
         intent.putExtra("publishableKey", publishableKey)
         intent.putExtra("clientSecret", clientSecret)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         context.startActivity(intent)
-
-//        result.success("Stripe Activity Started")
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {

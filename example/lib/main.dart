@@ -1,9 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
 import 'package:stripe_native/stripe_native.dart';
 
 void main() {
@@ -35,30 +30,32 @@ class _MyAppState extends State<MyApp> {
 
   void lunchStripe() {
     var ephemera = {
-      "id": "ephkey_1IgR4eHXAQctbbyagOGthEKm",
+      "id": "ephkey_1Ij0PWHXAQctbbyatzwoebSJ",
       "object": "ephemeral_key",
       "associated_objects": [
-        {"type": "customer", "id": "cus_JIziQakRLkTwq5"}
+        {
+          "type": "customer",
+          "id": "cus_JJXJG5V5xdbZha"
+        }
       ],
-      "created": 1618477280,
-      "expires": 1618480880,
+      "created": 1619089770,
+      "expires": 1619093370,
       "livemode": false,
-      "secret":
-          "ek_test_YWNjdF8xQjdOaklIWEFRY3RiYnlhLDZkaVNHdGtUeHBoTWN5cjc1UFBZRTdLNkRqdUFHV0w_00OBEv39lg"
+      "secret": "ek_test_YWNjdF8xQjdOaklIWEFRY3RiYnlhLElkaU5lTk5GRzFXNW1kZzBBaHRuTHdSNTlCcW5nc0w_00gc25sb0N"
     };
+ 
     try {
       StripeNative.lunchStripeNative(
               publishableKey: 'pk_test_vgklWgkPbEazPYbSES86lBRk',
-              clientSecret:
-                  "pi_1IgR4yHXAQctbbyazpZA4ZH1_secret_4XXxFDci97Oc3brhdBZdq18WB",
-              ephemeralKeyResponse: ephemera.toString())
+              clientSecret: "pi_1Ij0PjHXAQctbbya2BAbxVb9_secret_VXrqhxHoNnZwF551OWeEZYJIH",
+              ephemeralKeyResponse: ephemera)
           .then((value) {
         print('flutter response');
-        print(jsonDecode(value));
+        print(value);
       });
     } catch (e) {
       print(e.toString());
-      throw e;
+      // throw e;
     }
   }
 }
