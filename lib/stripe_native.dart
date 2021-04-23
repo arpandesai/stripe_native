@@ -19,6 +19,7 @@ class StripeNative {
 
       return response;
     } catch (e) {
+
       throw e;
     }
   }

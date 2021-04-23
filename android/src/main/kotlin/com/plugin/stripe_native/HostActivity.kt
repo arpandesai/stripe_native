@@ -69,11 +69,9 @@ class HostActivity : ComponentActivity() {
                     // customer intends to pay with Google Pay
                 } else {
                     data.paymentMethod?.let { paymentMethod ->
-                        // Display information about the selected payment method
                     }
                 }
-
-                if (data.isPaymentReadyToCharge) {
+                 if (data.isPaymentReadyToCharge) {
                     val paymentIntent = ConfirmPaymentIntentParams.createWithPaymentMethodId(data.paymentMethod?.id!!, clientSecret)
                     stripe.confirmPayment(this@HostActivity, paymentIntent)   //use payment intent
                     Log.e("isPaymentReady--> ", data.toString())
@@ -123,7 +121,7 @@ class HostActivity : ComponentActivity() {
 
             })
         }else{
-              StripeNativePlugin.resultInterface.error("payment_cancelled_by_user","User pressed back",nil);
+              StripeNativePlugin.resultInterface.error("payment_cancelled_by_user","User pressed back",null);
             this@HostActivity.finish()
         }
     }
