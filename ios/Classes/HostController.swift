@@ -5,7 +5,8 @@ class HostController:UIViewController{
     var paymentContext: STPPaymentContext!
     var myAPIClient = MyAPIClient()
     var flutterResults: FlutterResult!
-    
+    //for now we are cheking with bool that user is pressed back
+    var isPaymentCancelled = true
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -17,7 +18,7 @@ class HostController:UIViewController{
         
         config.requiredBillingAddressFields = .none
         config.requiredShippingAddressFields = .none
-        config.additionalPaymentOptions=STPPaymentOptionType.all
+        config.additionalPaymentOptions = STPPaymentOptionType.init(rawValue: 0)
         
         self.paymentContext = STPPaymentContext(customerContext: customerContext,configuration: config, theme: STPTheme.default());
         self.paymentContext.delegate = self
@@ -31,36 +32,35 @@ class HostController:UIViewController{
         if(!paymentContext.loading){
             DispatchQueue.main.async {
                 if(self.paymentContext.selectedPaymentOption != nil){
-                    self.didTapBuy()
-                       }else{
+                    self.paymentRequest()
+                       
+                }else{
+                    if(self.isPaymentCancelled){
+                        self.paymentCancelledByUser();
+                    }else{
+                        // if user has not pressed back then we can move forward wih normal pop
                         self.popContoller()
-                       }
+                    }
+                    
+               }
             }
-
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-//            if(self.paymentContext.selectedPaymentOption != nil){
-//                self.didTapBuy()
-//                   }else{
-//                    self.popContoller()
-//                   }
-//
-//               }
         }
 
     }
-    
     
 }
     
 
 extension HostController:STPPaymentContextDelegate{
     func paymentContext(_ paymentContext: STPPaymentContext, didFailToLoadWithError error: Error) {
+        isPaymentCancelled=false;
         print("didFailToLoadWithError", error.localizedDescription)
         self.flutterResults("Flutter error")
         
     }
     
     func paymentContext(_ paymentContext: STPPaymentContext, didCreatePaymentResult paymentResult: STPPaymentResult, completion: @escaping STPPaymentStatusBlock) {
+        isPaymentCancelled=false;
         //create payment
         print("didCreatePaymentResult", paymentResult)
         let paymentIntentParams = STPPaymentIntentParams(clientSecret: myAPIClient.clientSecret)
@@ -81,6 +81,7 @@ extension HostController:STPPaymentContextDelegate{
     }
     
     func paymentContext(_ paymentContext: STPPaymentContext, didFinishWith status: STPPaymentStatus, error: Error?) {
+        isPaymentCancelled=false;
         print("didFinishWith with status",status);
         switch status {
            case .error:
@@ -91,7 +92,12 @@ extension HostController:STPPaymentContextDelegate{
             
            case .success:
             print("success");
-            self.flutterResults!("Payment Sucess:" + toString(paymentContext));
+            NSLog("OnScuess", paymentContext)
+            print(paymentContext.paymentOptions)
+            print(paymentContext.paymentAmount)
+            print(paymentContext.paymentCountry)
+            print(paymentContext)
+            self.flutterResults!("Payment Success:");
             self.popContoller();
             break;
             
@@ -106,6 +112,7 @@ extension HostController:STPPaymentContextDelegate{
     }
    
     func paymentContextDidChange(_ paymentContext: STPPaymentContext) {
+       
         print(paymentContext)
     }
     
@@ -113,7 +120,7 @@ extension HostController:STPPaymentContextDelegate{
         self.dismiss(animated: true, completion: nil)
     }
     
-    func didTapBuy() {
+    func paymentRequest() {
         self.paymentContext.requestPayment()
     }
         
@@ -121,6 +128,10 @@ extension HostController:STPPaymentContextDelegate{
       return String(describing: value ?? "")
     }
     
+    func paymentCancelledByUser(){
+        self.flutterResults!(FlutterError(code: "payment_cancelled_by_user", message: "User pressed back or Please try again later", details: nil));
+        popContoller();
+    }
     
 }
 

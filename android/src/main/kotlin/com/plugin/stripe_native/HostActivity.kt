@@ -73,7 +73,7 @@ class HostActivity : ComponentActivity() {
                 }
                  if (data.isPaymentReadyToCharge) {
                     val paymentIntent = ConfirmPaymentIntentParams.createWithPaymentMethodId(data.paymentMethod?.id!!, clientSecret)
-                    stripe.confirmPayment(this@HostActivity, paymentIntent)   //use payment intent
+                     stripe.confirmPayment(this@HostActivity, paymentIntent)   //use payment intent
                     Log.e("isPaymentReady--> ", data.toString())
                 } else {
                     Log.e("onPaymentSession--> ", data.toString())
@@ -103,19 +103,18 @@ class HostActivity : ComponentActivity() {
             stripe.onPaymentResult(requestCode, data, object : ApiResultCallback<PaymentIntentResult> {
                 override fun onError(e: Exception) {
                     hidePaymentDialog();
-//                    Toast.makeText(this@HostActivity, "onError +${e.localizedMessage}", Toast.LENGTH_LONG).show();
-//                    Toast.makeText(this@HostActivity, "onError +${e.message}", Toast.LENGTH_LONG).show();
 
                     Log.d("onError --> ", e.localizedMessage)
 
-                    StripeNativePlugin.resultInterface.success(e.localizedMessage)
+                    StripeNativePlugin.resultInterface.success("Payment Error:"+e.localizedMessage)
                     this@HostActivity.finish()
                 }
 
                 override fun onSuccess(result: PaymentIntentResult) {
                     hidePaymentDialog();
                     Log.d("onSuccess --> ", result.toString())
-                    StripeNativePlugin.resultInterface.success(result.toString());
+
+                    StripeNativePlugin.resultInterface.success("Payment Success:"+result.toString());
                     this@HostActivity.finish()
                 }
 
