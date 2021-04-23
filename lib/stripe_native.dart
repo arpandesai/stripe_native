@@ -15,6 +15,7 @@ class StripeNative {
         'publishableKey': publishableKey,
         'ephemeralKey': ephemeralKeyResponse,
         'clientSecret': clientSecret,
+
       });
 
       return response;

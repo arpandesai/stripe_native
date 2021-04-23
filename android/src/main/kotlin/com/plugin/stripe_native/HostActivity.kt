@@ -121,7 +121,7 @@ class HostActivity : ComponentActivity() {
 
             })
         }else{
-              StripeNativePlugin.resultInterface.error("payment_cancelled_by_user","User pressed back",null);
+              StripeNativePlugin.resultInterface.error("payment_cancelled_by_user","User pressed back or Please try again later",null);
             this@HostActivity.finish()
         }
     }

@@ -31,8 +31,8 @@ flutter:
         package: com.plugin.stripe_native
         pluginClass: StripeNativePlugin
       ios:
-        pluginClass: StripeNativePlugin
-#        pluginClass: SwiftStripeNativePlugin
+#        pluginClass: StripeNativePlugin
+        pluginClass: SwiftStripeNativePlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

@@ -5,7 +5,6 @@ class HostController:UIViewController{
     var paymentContext: STPPaymentContext!
     var myAPIClient = MyAPIClient()
     var flutterResults: FlutterResult!
-    var delegate:StripeDelegate!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -23,41 +22,47 @@ class HostController:UIViewController{
         self.paymentContext = STPPaymentContext(customerContext: customerContext,configuration: config, theme: STPTheme.default());
         self.paymentContext.delegate = self
         self.paymentContext.hostViewController = self
-        self.paymentContext.pushPaymentOptionsViewController()
+        self.paymentContext.presentPaymentOptionsViewController()
         
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if(!paymentContext.loading){
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            if(self.paymentContext.selectedPaymentOption != nil){
-                self.didTapBuy()
-                   }else{
-                    self.popContoller()
-                   }
-       
-               }
+            DispatchQueue.main.async {
+                if(self.paymentContext.selectedPaymentOption != nil){
+                    self.didTapBuy()
+                       }else{
+                        self.popContoller()
+                       }
+            }
+
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+//            if(self.paymentContext.selectedPaymentOption != nil){
+//                self.didTapBuy()
+//                   }else{
+//                    self.popContoller()
+//                   }
+//
+//               }
         }
-    
+
     }
+    
+    
 }
     
 
 extension HostController:STPPaymentContextDelegate{
     func paymentContext(_ paymentContext: STPPaymentContext, didFailToLoadWithError error: Error) {
-        NSLog("didFailToLoadWithError", error.localizedDescription)
-          delegate.resposeToFlutter()
-        print(error)
+        print("didFailToLoadWithError", error.localizedDescription)
+        self.flutterResults("Flutter error")
         
-//        self.flutterResults!(FlutterError(code: "Error", message: error.localizedDescription, details: error.localizedDescription))
-        
-
     }
     
     func paymentContext(_ paymentContext: STPPaymentContext, didCreatePaymentResult paymentResult: STPPaymentResult, completion: @escaping STPPaymentStatusBlock) {
         //create payment
-        NSLog("didCreatePaymentResult", paymentResult)
+        print("didCreatePaymentResult", paymentResult)
         let paymentIntentParams = STPPaymentIntentParams(clientSecret: myAPIClient.clientSecret)
             paymentIntentParams.paymentMethodId = paymentResult.paymentMethod.stripeId
         
@@ -76,26 +81,23 @@ extension HostController:STPPaymentContextDelegate{
     }
     
     func paymentContext(_ paymentContext: STPPaymentContext, didFinishWith status: STPPaymentStatus, error: Error?) {
-        print(status);
-        print( paymentContext)
+        print("didFinishWith with status",status);
         switch status {
            case .error:
             print("error");
-//            SwiftStripeNativePlugin.flutterResults!("Payment Error:" + error!.localizedDescription);
-//            self.flutterResults!("Payment Error:" + error!.localizedDescription);
+            self.flutterResults!("Payment Error:" + error!.localizedDescription);
             self.popContoller();
             break;
             
            case .success:
             print("success");
-//            flutterResults!("Payment Sucess:" + toString(paymentContext));
-//            self.flutterResults!("Payment Sucess:");
+            self.flutterResults!("Payment Sucess:" + toString(paymentContext));
             self.popContoller();
             break;
             
            case .userCancellation:
             print("userCancellation");
-//            self.flutterResults!("Payment error");
+            self.flutterResults!(FlutterError(code: "payment_cancelled_by_user", message: "User pressed back or Please try again later", details: nil));
             self.popContoller();
             return // Do nothing
         @unknown default:
@@ -105,17 +107,16 @@ extension HostController:STPPaymentContextDelegate{
    
     func paymentContextDidChange(_ paymentContext: STPPaymentContext) {
         print(paymentContext)
-    
     }
     
-    func popContoller(){
-        self.navigationController?.popViewController(animated: true)
+  func popContoller(){
+        self.dismiss(animated: true, completion: nil)
     }
     
-     func didTapBuy() {
+    func didTapBuy() {
         self.paymentContext.requestPayment()
     }
-    
+        
     func toString(_ value: Any?) -> String {
       return String(describing: value ?? "")
     }
