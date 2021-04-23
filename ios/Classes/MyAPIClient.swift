@@ -10,7 +10,7 @@ class MyAPIClient: NSObject, STPCustomerEphemeralKeyProvider {
     static let myAPISharedClient = MyAPIClient()
 
     func createCustomerKey(withAPIVersion apiVersion: String, completion: @escaping STPJSONResponseCompletionBlock) {
-        print(ephemeralKey)
+//        print(ephemeralKey)
         //completion(convertToDictionary(text: ephemeralKey), nil)
         completion(ephemeralKey, nil)
 

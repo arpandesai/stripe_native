@@ -92,11 +92,11 @@ extension HostController:STPPaymentContextDelegate{
             
            case .success:
             print("success");
-            NSLog("OnScuess", paymentContext)
-            print(paymentContext.paymentOptions)
-            print(paymentContext.paymentAmount)
-            print(paymentContext.paymentCountry)
-            print(paymentContext)
+//            NSLog("OnScuess", paymentContext)
+//            print(paymentContext.paymentOptions)
+//            print(paymentContext.paymentAmount)
+//            print(paymentContext.paymentCountry)
+//            print(paymentContext)
             self.flutterResults!("Payment Success:");
             self.popContoller();
             break;
@@ -113,7 +113,7 @@ extension HostController:STPPaymentContextDelegate{
    
     func paymentContextDidChange(_ paymentContext: STPPaymentContext) {
        
-        print(paymentContext)
+//        print(paymentContext)
     }
     
   func popContoller(){
