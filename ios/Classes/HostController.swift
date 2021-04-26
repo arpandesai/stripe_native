@@ -63,8 +63,10 @@ extension HostController:STPPaymentContextDelegate{
         isPaymentCancelled=false;
         //create payment
         print("didCreatePaymentResult", paymentResult)
+        let stripeId = paymentResult.paymentMethod.stripeId
+        print("Stripe Id : ", stripeId)
         let paymentIntentParams = STPPaymentIntentParams(clientSecret: myAPIClient.clientSecret)
-            paymentIntentParams.paymentMethodId = paymentResult.paymentMethod.stripeId
+            paymentIntentParams.paymentMethodId = stripeId
         
         STPPaymentHandler.shared().confirmPayment(withParams: paymentIntentParams, authenticationContext: paymentContext) { status, paymentIntent, error in
                        switch status {
