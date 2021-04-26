@@ -61,10 +61,18 @@ extension HostController:STPPaymentContextDelegate{
     
     func paymentContext(_ paymentContext: STPPaymentContext, didCreatePaymentResult paymentResult: STPPaymentResult, completion: @escaping STPPaymentStatusBlock) {
         isPaymentCancelled=false;
+        var stripeId = ""
         //create payment
         print("didCreatePaymentResult", paymentResult)
-        let stripeId = paymentResult.paymentMethod.stripeId
-        print("Stripe Id : ", stripeId)
+        if (paymentResult != nil) {
+            if(paymentResult.paymentMethod != nil) {
+                if(paymentResult.paymentMethod.stripeId != nil) {
+                    stripeId = paymentResult.paymentMethod.stripeId
+                }
+            }
+        }
+//        let stripeId = paymentResult.paymentMethod?.stripeId
+//        print("Stripe Id : ", stripeId)
         let paymentIntentParams = STPPaymentIntentParams(clientSecret: myAPIClient.clientSecret)
             paymentIntentParams.paymentMethodId = stripeId
         
