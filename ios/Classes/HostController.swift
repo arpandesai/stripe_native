@@ -71,7 +71,7 @@ extension HostController:STPPaymentContextDelegate{
 //                }
 //            }
 //        }
-        
+        //For flutter integration - needs "?" - so ignore this error
         let stripeId = paymentResult.paymentMethod?.stripeId
 //        print("Stripe Id : ", stripeId)
         let paymentIntentParams = STPPaymentIntentParams(clientSecret: myAPIClient.clientSecret)
