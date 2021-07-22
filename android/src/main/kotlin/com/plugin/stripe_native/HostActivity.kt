@@ -1,25 +1,39 @@
 package com.plugin.stripe_native
 
-import android.app.Activity
-import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
-import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.wallet.*
 import com.stripe.android.*
 import com.stripe.android.model.ConfirmPaymentIntentParams
-import com.stripe.android.model.PaymentIntent
 import com.stripe.android.model.PaymentMethod
-import com.stripe.android.model.ShippingInformation
+import com.stripe.android.model.PaymentMethodCreateParams
+import com.stripe.android.paymentsheet.PaymentSheet
+import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.*
-import java.util.Arrays.asList
+
 
 class HostActivity : ComponentActivity() {
+    var TAG:String=HostActivity::class.java.simpleName
     private lateinit var paymentSession: PaymentSession
     private lateinit var stripe: Stripe
+    // Instance of payment client
+    private val paymentsClient: PaymentsClient by lazy {
+        Wallet.getPaymentsClient(
+                this,
+                Wallet.WalletOptions.Builder()
+                        .setEnvironment(WalletConstants.ENVIRONMENT_TEST)
+                        .build()
+        )
+    }
+    val LOAD_PAYMENT_DATA_REQUEST_CODE:Int=53
     private lateinit var publishableKey: String
     private lateinit var clientSecret: String
     private lateinit var paymentDialog: ProgressDialog
@@ -27,23 +41,72 @@ class HostActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.host_activity)
-        actionBar?.hide();
-        paymentDialog = ProgressDialog(this);
+        actionBar?.hide()
+        paymentDialog = ProgressDialog(this)
 
 
         publishableKey = intent.getStringExtra("publishableKey")!!
         clientSecret = intent.getStringExtra("clientSecret")!!
-
         stripe = Stripe(this, publishableKey)
         paymentSession = PaymentSession(
                 this,
                 createPaymentSessionConfig())
         // Attach your listener
+        PaymentConfiguration.init(this,publishableKey)
         paymentSession.init(createPaymentSessionListener())
         paymentSession.presentPaymentMethodSelection()
 
+
+        /*val googlePayConfig = PaymentSheet.GooglePayConfiguration(
+                environment = PaymentSheet.GooglePayConfiguration.Environment.Test,
+                countryCode = "US"
+        )
+        val configuration = PaymentSheet.Configuration(...)
+        configuration.googlePay = googlePayConfiguration*/
+
+
+        isReadyToPay()
+
     }
 
+    private fun isReadyToPay() {
+        paymentsClient.isReadyToPay(createIsReadyToPayRequest())
+                .addOnCompleteListener { task ->
+                    try {
+                        if (task.isSuccessful) {
+                            Log.wtf(TAG,"isReadyToPay: if : ${task.isSuccessful}")
+                            // show Google Pay as payment option
+                        } else {
+                            Log.wtf(TAG,"isReadyToPay: Else : ${task.exception}")
+                            // hide Google Pay as payment option
+                        }
+                    } catch (exception: ApiException) {
+                    }
+                }
+    }
+
+    /**
+     * See https://developers.google.com/pay/api/android/reference/request-objects#example
+     * for an example of the generated JSON.
+     */
+    private fun createIsReadyToPayRequest(): IsReadyToPayRequest {
+        return IsReadyToPayRequest.fromJson(
+                JSONObject()
+                        .put("apiVersion", 2)
+                        .put("apiVersionMinor", 0)
+                        .put("allowedPaymentMethods",
+                                JSONArray().put(JSONObject()
+                                        .put("type", "CARD")
+                                        .put("parameters",
+                                                JSONObject().put("allowedAuthMethods", JSONArray()
+                                                        .put("PAN_ONLY")
+                                                        .put("CRYPTOGRAM_3DS")).put("allowedCardNetworks", JSONArray()
+                                                        .put("AMEX")
+                                                        .put("DISCOVER")
+                                                        .put("MASTERCARD")
+                                                        .put("VISA"))))).toString()
+        )
+    }
 
     private fun createPaymentSessionListener(): PaymentSession.PaymentSessionListener {
         return object : PaymentSession.PaymentSessionListener {
@@ -51,10 +114,10 @@ class HostActivity : ComponentActivity() {
                 Log.e("onCommunicatingState-->", isCommunicating.toString())
                 if (isCommunicating)
                 // update UI to indicate that network communication is in progress
-                    showPaymentDialog();
+                    showPaymentDialog()
                 else
                 // update UI to indicate that network communication has completed
-                    hidePaymentDialog();
+                    hidePaymentDialog()
 
             }
 
@@ -64,20 +127,28 @@ class HostActivity : ComponentActivity() {
 
             override fun onPaymentSessionDataChanged(data: PaymentSessionData) {
 
-                Log.e("onPayment-->", data.toString())
+                Log.e("onPayment-->", "PaymentInfo: $data : ${data.isPaymentReadyToCharge} : ${data.paymentMethod?.id} : $clientSecret")
                 if (data.useGooglePay) {
+
+                    Log.e(TAG,"Payment method: Use Google Pay Call")
+
+                    AutoResolveHelper.resolveTask(
+                    paymentsClient.loadPaymentData(createPaymentDataRequest()),this@HostActivity,LOAD_PAYMENT_DATA_REQUEST_CODE)
+
+
                     // customer intends to pay with Google Pay
                 } else {
+                    Log.e(TAG,"Payment method: Else Call")
                     data.paymentMethod?.let { paymentMethod ->
                     }
                 }
-                 if (data.isPaymentReadyToCharge) {
+                /*if (data.isPaymentReadyToCharge) {
                     val paymentIntent = ConfirmPaymentIntentParams.createWithPaymentMethodId(data.paymentMethod?.id!!, clientSecret)
                      stripe.confirmPayment(this@HostActivity, paymentIntent)   //use payment intent
                     Log.e("isPaymentReady--> ", data.toString())
                 } else {
                     Log.e("onPaymentSession--> ", data.toString())
-                }
+                }*/
 
             }
         }
@@ -89,8 +160,55 @@ class HostActivity : ComponentActivity() {
 //                .setShouldShowGooglePay(true)
                 // specify the payment method types that the customer can use;
                 // defaults to PaymentMethod.Type.Card
-                .setPaymentMethodTypes(Arrays.asList(PaymentMethod.Type.Card))
+                .setPaymentMethodTypes(listOf(PaymentMethod.Type.Card))
+                .setShouldShowGooglePay(true)
                 .build()
+    }
+
+
+    private fun createPaymentDataRequest(): PaymentDataRequest {
+        val tokenizationSpec: JSONObject = GooglePayConfig(this).tokenizationSpecification
+        val cardPaymentMethod: JSONObject = JSONObject()
+                .put("type", "CARD")
+                .put(
+                        "parameters",
+                        JSONObject()
+                                .put("allowedAuthMethods", JSONArray()
+                                        .put("PAN_ONLY")
+                                        .put("CRYPTOGRAM_3DS"))
+                                .put("allowedCardNetworks",
+                                        JSONArray()
+                                                .put("AMEX")
+                                                .put("DISCOVER")
+                                                .put("MASTERCARD")
+                                                .put("VISA")) // require billing address
+                                .put("billingAddressRequired", true)
+                                .put(
+                                        "billingAddressParameters",
+                                        JSONObject() // require full billing address
+                                                .put("format", "MIN") // require phone number
+                                                .put("phoneNumberRequired", true)
+                                )
+                )
+                .put("tokenizationSpecification", tokenizationSpec)
+
+        // create PaymentDataRequest
+
+        val paymentDataRequest: String = JSONObject()
+                .put("apiVersion", 2)
+                .put("apiVersionMinor", 0)
+                .put("allowedPaymentMethods",
+                        JSONArray().put(cardPaymentMethod))
+                .put("transactionInfo", JSONObject()
+                        .put("totalPrice", "10.00")
+                        .put("totalPriceStatus", "FINAL")
+                        .put("currencyCode", "USD")
+                )
+                .put("merchantInfo", JSONObject()
+                        .put("merchantName", "Example Merchant")) // require email address
+                .put("emailRequired", true)
+                .toString()
+        return PaymentDataRequest.fromJson(paymentDataRequest)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -114,7 +232,7 @@ class HostActivity : ComponentActivity() {
                     hidePaymentDialog();
                     Log.d("onSuccess --> ", result.toString())
 
-                    StripeNativePlugin.resultInterface.success("Payment Success:"+result.toString());
+                    StripeNativePlugin.resultInterface.success("Payment Success:$result");
                     this@HostActivity.finish()
                 }
 
@@ -124,6 +242,39 @@ class HostActivity : ComponentActivity() {
             this@HostActivity.finish()
         }
     }
+
+    /*private fun onGooglePayResult(data: Intent) {
+        val paymentData = PaymentData.getFromIntent(data) ?: return
+        val paymentMethodCreateParams =
+                PaymentMethodCreateParams.createFromGooglePay(
+                        JSONObject(paymentData.toJson())
+                )
+
+        // now use the `paymentMethodCreateParams` object to create a PaymentMethod
+        lifecycleScope.launch {
+            runCatching {
+
+                stripe.createPaymentMethod(paymentMethodCreateParams)
+            }.fold(
+                    onSuccess = { result ->
+                        // See https://stripe.com/docs/payments/accept-a-payment?platform=android#android-create-payment-intent
+                        // for how to create a PaymentIntent on your backend and use its client secret
+                        // to confirm the payment on the client.
+                        val confirmParams = ConfirmPaymentIntentParams
+                                .createWithPaymentMethodId(
+                                        paymentMethodId = result.toString(),
+                                        clientSecret = "{{PAYMENT_INTENT_CLIENT_SECRET}}"
+                                )
+                        stripe.confirmPayment(
+                                this@HostActivity,
+                                confirmPaymentIntentParams = confirmParams
+                        )
+                    },
+                    onFailure = {
+                    }
+            )
+        }
+    }*/
 
     //    ///class utils methods
     private fun hidePaymentDialog() {
